@@ -30,4 +30,19 @@ return [
      * Default chat ID for sending messages (optional).
      */
     'default_chat_id' => env('TELEGRAM_DEFAULT_CHAT_ID', ''),
+
+    /**
+     * Webhook URL for receiving Telegram updates (optional).
+     */
+    'webhook_url' => env('TELEGRAM_WEBHOOK_URL', ''),
+
+    /**
+     * Maximum connections for the webhook (optional).
+     */
+    'webhook_max_connections' => env('TELEGRAM_WEBHOOK_MAX_CONNECTIONS', 40),
+
+    /**
+     * Allowed updates for the webhook (optional, e.g., ['message', 'callback_query']).
+     */
+    'webhook_allowed_updates' => env('TELEGRAM_WEBHOOK_ALLOWED_UPDATES', []),
 ];

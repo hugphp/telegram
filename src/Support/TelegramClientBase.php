@@ -9,11 +9,10 @@ use InvalidArgumentException;
 use RuntimeException;
 
 /**
- * Telegram Bot API client for interacting with Telegram's API endpoints.
+ * Base class for Telegram Bot API clients, providing core HTTP request logic.
  *
- * This class provides a flexible and performant interface for sending messages,
- * retrieving updates, and other Telegram API operations. It supports configuration-driven
- * behavior, retry logic, and extensible endpoint handling.
+ * This class abstracts HTTP request handling, configuration, and error parsing
+ * for Telegram API interactions, supporting retry logic and dependency injection.
  *
  * @see https://core.telegram.org/bots/api
  */
@@ -31,8 +30,6 @@ abstract class TelegramClientBase
 
     /**
      * The HTTP client instance for making API requests.
-     *
-     * @var PendingRequest
      */
     protected PendingRequest $httpClient;
 
@@ -71,25 +68,39 @@ abstract class TelegramClientBase
     }
 
     /**
-     * Make a sendRequest to the Telegram API.
+     * Make a request to the Telegram API.
      *
      * This method abstracts the HTTP request logic, handling retries, error checking,
-     * and response parsing for all API endpoints.
+     * and response parsing for all API endpoints. Supports file uploads for multipart requests.
      *
      * @param  string  $method  The HTTP method (get or post).
      * @param  string  $endpoint  The Telegram API endpoint (e.g., sendMessage, getUpdates).
      * @param  array  $payload  The request payload (query parameters for GET, body for POST).
+     * @param  ?array  $files  Files to upload (e.g., ['photo' => UploadedFile]).
      * @return array The API response as an associative array.
      *
      * @throws RuntimeException If the API request fails or returns an error.
      */
-    protected function sendRequest(string $method, string $endpoint, array $payload = []): array
+    protected function sendRequest(string $method, string $endpoint, array $payload = [], array $files = []): array
     {
         $url = "{$this->apiBaseUrl}/bot{$this->botToken}/{$endpoint}";
 
-        $response = $method === 'get'
-            ? $this->httpClient->get($url, $payload)
-            : $this->httpClient->post($url, $payload);
+        if ($method === 'get') {
+            $response = $this->httpClient->get($url, $payload);
+        } else {
+            if (! empty($files)) {
+                $response = $this->httpClient->asMultipart();
+                foreach ($payload as $key => $value) {
+                    $response = $response->attach($key, $value);
+                }
+                foreach ($files as $key => $file) {
+                    $response = $response->attach($key, $file->getContent(), $file->getClientOriginalName());
+                }
+                $response = $response->post($url);
+            } else {
+                $response = $this->httpClient->post($url, $payload);
+            }
+        }
 
         $data = $this->parseResponse($response);
 
@@ -123,11 +134,21 @@ abstract class TelegramClientBase
         return $data;
     }
 
+    /**
+     * Get the bot token.
+     *
+     * @return string The Telegram bot token.
+     */
     public function getBotToken(): string
     {
         return $this->botToken;
     }
 
+    /**
+     * Get the API base URL.
+     *
+     * @return string The Telegram API base URL.
+     */
     public function getApiBaseUrl(): string
     {
         return $this->apiBaseUrl;
