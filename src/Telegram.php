@@ -22,4 +22,10 @@ class Telegram
 
         return $response->json();
     }
+
+    public function getUpdates(): array
+    {
+        $response = Http::get("https://api.telegram.org/bot{$this->botToken}/getUpdates");
+        return $response->json();
+    }
 }
