@@ -5,7 +5,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 
-beforeEach(function () {
+beforeEach(function (): void {
     // Fake HTTP requests to prevent real API calls
     Http::preventStrayRequests();
     // Set up temporary storage disk for file uploads
@@ -19,11 +19,11 @@ beforeEach(function () {
     ]);
 });
 
-test('throws an exception for empty bot token', function () {
-    expect(fn () => new Telegram(''))->toThrow(\InvalidArgumentException::class, 'Telegram bot token cannot be empty.');
+test('throws an exception for empty bot token', function (): void {
+    expect(fn (): Telegram => new Telegram(''))->toThrow(\InvalidArgumentException::class, 'Telegram bot token cannot be empty.');
 });
 
-test('sends a message successfully', function () {
+test('sends a message successfully', function (): void {
     Http::fake([
         'https://api.telegram.org/botfake_token/sendMessage' => Http::response([
             'ok' => true,
@@ -56,7 +56,7 @@ test('sends a message successfully', function () {
 //         ->toThrow(\RuntimeException::class, 'Telegram API error: Bad Request: chat not found (Code: 400)');
 // });
 
-test('sends a photo with URL successfully', function () {
+test('sends a photo with URL successfully', function (): void {
     Http::fake([
         'https://api.telegram.org/botfake_token/sendPhoto' => Http::response([
             'ok' => true,
@@ -75,7 +75,7 @@ test('sends a photo with URL successfully', function () {
     expect($response['result']['message_id'])->toBe(124);
 });
 
-test('sends a photo with UploadedFile successfully', function () {
+test('sends a photo with UploadedFile successfully', function (): void {
     Http::fake([
         'https://api.telegram.org/botfake_token/sendPhoto' => Http::response([
             'ok' => true,
@@ -95,7 +95,7 @@ test('sends a photo with UploadedFile successfully', function () {
     expect($response['result']['message_id'])->toBe(124);
 });
 
-test('sends a video with URL successfully', function () {
+test('sends a video with URL successfully', function (): void {
     Http::fake([
         'https://api.telegram.org/botfake_token/sendVideo' => Http::response([
             'ok' => true,
@@ -134,7 +134,7 @@ test('sends a video with URL successfully', function () {
 //     expect($response['result']['message_id'])->toBe(125);
 // });
 
-test('sends a document with URL successfully', function () {
+test('sends a document with URL successfully', function (): void {
     Http::fake([
         'https://api.telegram.org/botfake_token/sendDocument' => Http::response([
             'ok' => true,
@@ -173,7 +173,7 @@ test('sends a document with URL successfully', function () {
 //     expect($response['result']['message_id'])->toBe(126);
 // });
 
-test('sends a location successfully', function () {
+test('sends a location successfully', function (): void {
     Http::fake([
         'https://api.telegram.org/botfake_token/sendLocation' => Http::response([
             'ok' => true,
@@ -192,7 +192,7 @@ test('sends a location successfully', function () {
     expect($response['result']['message_id'])->toBe(127);
 });
 
-test('sends a contact successfully', function () {
+test('sends a contact successfully', function (): void {
     Http::fake([
         'https://api.telegram.org/botfake_token/sendContact' => Http::response([
             'ok' => true,
@@ -211,7 +211,7 @@ test('sends a contact successfully', function () {
     expect($response['result']['message_id'])->toBe(128);
 });
 
-test('sets a webhook successfully', function () {
+test('sets a webhook successfully', function (): void {
     Http::fake([
         'https://api.telegram.org/botfake_token/setWebhook' => Http::response([
             'ok' => true,
@@ -227,7 +227,7 @@ test('sets a webhook successfully', function () {
     expect($response['result'])->toBeTrue();
 });
 
-test('gets webhook info successfully', function () {
+test('gets webhook info successfully', function (): void {
     Http::fake([
         'https://api.telegram.org/botfake_token/getWebhookInfo' => Http::response([
             'ok' => true,
@@ -245,7 +245,7 @@ test('gets webhook info successfully', function () {
     expect($response['result']['url'])->toBe('https://example.com/webhook');
 });
 
-test('deletes webhook successfully', function () {
+test('deletes webhook successfully', function (): void {
     Http::fake([
         'https://api.telegram.org/botfake_token/deleteWebhook' => Http::response([
             'ok' => true,
@@ -261,7 +261,7 @@ test('deletes webhook successfully', function () {
     expect($response['result'])->toBeTrue();
 });
 
-test('retrieves updates successfully', function () {
+test('retrieves updates successfully', function (): void {
     Http::fake([
         'https://api.telegram.org/botfake_token/getUpdates*' => Http::response([
             'ok' => true,
@@ -284,27 +284,27 @@ test('retrieves updates successfully', function () {
     expect($response['result'])->toBeArray();
 });
 
-test('throws an exception for invalid API response', function () {
+test('throws an exception for invalid API response', function (): void {
     Http::fake([
         'https://api.telegram.org/botfake_token/sendMessage' => Http::response(['invalid' => true], 200),
     ]);
 
     $telegram = new Telegram('fake_token');
-    expect(fn () => $telegram->sendMessage('682299441', 'Test message'))
+    expect(fn (): array => $telegram->sendMessage('682299441', 'Test message'))
         ->toThrow(\RuntimeException::class, 'Invalid Telegram API response.');
 });
 
-test('throws an exception for HTTP failure', function () {
+test('throws an exception for HTTP failure', function (): void {
     Http::fake([
         'https://api.telegram.org/botfake_token/sendMessage' => Http::response([], 500),
     ]);
 
     $telegram = new Telegram('fake_token');
-    expect(fn () => $telegram->sendMessage('682299441', 'Test message'))
+    expect(fn (): array => $telegram->sendMessage('682299441', 'Test message'))
         ->toThrow(\RuntimeException::class, 'Failed to connect to Telegram API: 500');
 });
 
-test('uses custom API base URL', function () {
+test('uses custom API base URL', function (): void {
     Http::fake([
         'https://custom.telegram.api/botfake_token/getUpdates' => Http::response([
             'ok' => true,
@@ -318,7 +318,7 @@ test('uses custom API base URL', function () {
     expect($response['ok'])->toBeTrue();
 });
 
-test('uses custom HTTP client', function () {
+test('uses custom HTTP client', function (): void {
     Http::fake([
         'https://api.telegram.org/botfake_token/getUpdates' => Http::response([
             'ok' => true,
@@ -333,17 +333,17 @@ test('uses custom HTTP client', function () {
     expect($response['ok'])->toBeTrue();
 });
 
-test('gets bot token', function () {
+test('gets bot token', function (): void {
     $telegram = new Telegram('fake_token');
     expect($telegram->getBotToken())->toBe('fake_token');
 });
 
-test('gets API base URL', function () {
+test('gets API base URL', function (): void {
     $telegram = new Telegram('fake_token', 'https://custom.api');
     expect($telegram->getApiBaseUrl())->toBe('https://custom.api');
 });
 
-test('uses default API base URL from config', function () {
+test('uses default API base URL from config', function (): void {
     config(['telegram.api_base_url' => 'https://default.api']);
     $telegram = new Telegram('fake_token');
     expect($telegram->getApiBaseUrl())->toBe('https://default.api');

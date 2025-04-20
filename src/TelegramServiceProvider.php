@@ -20,10 +20,10 @@ class TelegramServiceProvider extends ServiceProvider
         $this->mergeConfigFrom(__DIR__.'/../config/telegram.php', 'telegram');
 
         // Register the Telegram service
-        $this->app->singleton('telegram', function () {
+        $this->app->singleton('telegram', function (): Telegram {
             $botToken = config('telegram.bot_token');
 
-            if (! is_string($botToken) || empty($botToken)) {
+            if (! is_string($botToken) || ($botToken === '' || $botToken === '0')) {
                 throw new InvalidArgumentException('The Telegram bot token is missing or invalid. Please set TELEGRAM_BOT_TOKEN in your .env file.');
             }
 

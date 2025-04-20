@@ -51,7 +51,7 @@ abstract class TelegramClientBase
      */
     public function __construct(string $botToken, ?string $apiBaseUrl = null, ?PendingRequest $httpClient = null)
     {
-        if (empty($botToken)) {
+        if ($botToken === '' || $botToken === '0') {
             throw new InvalidArgumentException('Telegram bot token cannot be empty.');
         }
 
@@ -102,27 +102,25 @@ abstract class TelegramClientBase
 
         if ($method === 'get') {
             $response = $this->httpClient->get($url, $payload);
-        } else {
-            if (! empty($files)) {
-                $response = $this->httpClient->asMultipart();
-                foreach ($payload as $key => $value) {
-                    if (is_array($value)) {
-                        $contents = json_encode($value);
-                        if ($contents === false) {
-                            throw new InvalidArgumentException("Failed to JSON-encode payload value for key '{$key}'.");
-                        }
-                    } else {
-                        $contents = (string) $value;
+        } elseif ($files !== []) {
+            $response = $this->httpClient->asMultipart();
+            foreach ($payload as $key => $value) {
+                if (is_array($value)) {
+                    $contents = json_encode($value);
+                    if ($contents === false) {
+                        throw new InvalidArgumentException("Failed to JSON-encode payload value for key '{$key}'.");
                     }
-                    $response = $response->attach($key, $contents);
+                } else {
+                    $contents = (string) $value;
                 }
-                foreach ($files as $key => $file) {
-                    $response = $response->attach($key, $file->getContent(), $file->getClientOriginalName());
-                }
-                $response = $response->post($url);
-            } else {
-                $response = $this->httpClient->post($url, $payload);
+                $response = $response->attach($key, $contents);
             }
+            foreach ($files as $key => $file) {
+                $response = $response->attach($key, $file->getContent(), $file->getClientOriginalName());
+            }
+            $response = $response->post($url);
+        } else {
+            $response = $this->httpClient->post($url, $payload);
         }
 
         $data = $this->parseResponse($response);

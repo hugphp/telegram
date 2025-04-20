@@ -4,7 +4,7 @@ use HugPHP\Telegram\Support\TelegramClientBase;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Facades\Http;
 
-beforeEach(function () {
+beforeEach(function (): void {
     Http::preventStrayRequests();
     config([
         'telegram.api_base_url' => 'https://api.telegram.org',
@@ -14,28 +14,28 @@ beforeEach(function () {
     ]);
 });
 
-test('throws an exception for empty bot token', function () {
-    expect(fn () => new class('') extends TelegramClientBase {})
+test('throws an exception for empty bot token', function (): void {
+    expect(fn (): TelegramClientBase => new class('') extends TelegramClientBase {})
         ->toThrow(\InvalidArgumentException::class, 'Telegram bot token cannot be empty.');
 });
 
-test('gets bot token', function () {
+test('gets bot token', function (): void {
     $telegram = new class('fake_token') extends TelegramClientBase {};
     expect($telegram->getBotToken())->toBe('fake_token');
 });
 
-test('gets API base URL', function () {
+test('gets API base URL', function (): void {
     $telegram = new class('fake_token', 'https://custom.api') extends TelegramClientBase {};
     expect($telegram->getApiBaseUrl())->toBe('https://custom.api');
 });
 
-test('uses default API base URL from config', function () {
+test('uses default API base URL from config', function (): void {
     config(['telegram.api_base_url' => 'https://default.api']);
     $telegram = new class('fake_token') extends TelegramClientBase {};
     expect($telegram->getApiBaseUrl())->toBe('https://default.api');
 });
 
-test('builds HTTP client with config options', function () {
+test('builds HTTP client with config options', function (): void {
     $telegram = new class('fake_token') extends TelegramClientBase {};
     $reflection = new \ReflectionClass($telegram);
     $method = $reflection->getMethod('buildHttpClient');
