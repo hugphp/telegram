@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace HugPHP\Telegram\Support;
 
 use Illuminate\Http\Client\PendingRequest;
@@ -11,8 +13,9 @@ use RuntimeException;
 /**
  * Base class for Telegram Bot API clients, providing core HTTP request logic.
  *
- * This class abstracts HTTP request handling, configuration, and error parsing
- * for Telegram API interactions, supporting retry logic and dependency injection.
+ * This abstract class handles HTTP request execution, configuration management, and response parsing
+ * for Telegram API interactions. It supports retry logic, dependency injection, and file uploads
+ * for multipart requests, serving as a foundation for concrete Telegram API clients.
  *
  * @see https://core.telegram.org/bots/api
  */
@@ -34,13 +37,17 @@ abstract class TelegramClientBase
     protected PendingRequest $httpClient;
 
     /**
-     * Telegram constructor.
+     * Constructs a new Telegram client instance.
+     *
+     * Initializes the client with a bot token, optional API base URL, and optional HTTP client.
+     * If no API base URL is provided, it defaults to the configuration value or the standard Telegram API URL.
+     * If no HTTP client is provided, a new client is built with configured options.
      *
      * @param  string  $botToken  The Telegram Bot API token obtained from BotFather.
-     * @param  string|null  $apiBaseUrl  The base URL for the Telegram API (optional, defaults to config or standard URL).
+     * @param  string|null  $apiBaseUrl  The base URL for the Telegram API (optional, defaults to config or 'https://api.telegram.org').
      * @param  PendingRequest|null  $httpClient  Custom HTTP client instance (optional, for dependency injection).
      *
-     * @throws InvalidArgumentException If the bot token is empty or invalid.
+     * @throws \InvalidArgumentException If the bot token is empty.
      */
     public function __construct(string $botToken, ?string $apiBaseUrl = null, ?PendingRequest $httpClient = null)
     {
@@ -49,12 +56,19 @@ abstract class TelegramClientBase
         }
 
         $this->botToken = $botToken;
-        $this->apiBaseUrl = $apiBaseUrl ?? config('telegram.api_base_url', 'https://api.telegram.org');
+        $configApiBaseUrl = config('telegram.api_base_url', 'https://api.telegram.org');
+        if (! is_string($configApiBaseUrl)) {
+            throw new InvalidArgumentException('Telegram API base URL must be a string.');
+        }
+        $this->apiBaseUrl = $apiBaseUrl ?? $configApiBaseUrl;
         $this->httpClient = $httpClient ?? $this->buildHttpClient();
     }
 
     /**
-     * Build and configure the HTTP client.
+     * Builds and configures the HTTP client for API requests.
+     *
+     * Creates a new HTTP client instance with configuration-driven options for timeout,
+     * retries, and retry delay, and sets it to accept JSON responses.
      *
      * @return PendingRequest The configured HTTP client instance.
      */
@@ -68,18 +82,19 @@ abstract class TelegramClientBase
     }
 
     /**
-     * Make a request to the Telegram API.
+     * Makes a request to the Telegram API.
      *
-     * This method abstracts the HTTP request logic, handling retries, error checking,
-     * and response parsing for all API endpoints. Supports file uploads for multipart requests.
+     * Handles HTTP request execution, including GET and POST methods, with support for
+     * query parameters, JSON payloads, and multipart file uploads. Parses the response
+     * and throws exceptions for errors.
      *
-     * @param  string  $method  The HTTP method (get or post).
-     * @param  string  $endpoint  The Telegram API endpoint (e.g., sendMessage, getUpdates).
-     * @param  array  $payload  The request payload (query parameters for GET, body for POST).
-     * @param  ?array  $files  Files to upload (e.g., ['photo' => UploadedFile]).
-     * @return array The API response as an associative array.
+     * @param  string  $method  The HTTP method ('get' or 'post').
+     * @param  string  $endpoint  The Telegram API endpoint (e.g., 'sendMessage', 'getUpdates').
+     * @param  array<string, string|array<string, mixed>>  $payload  The request payload (query parameters for GET, body for POST).
+     * @param  array<string, \Illuminate\Http\UploadedFile>  $files  Files to upload (e.g., ['photo' => UploadedFile]), defaults to empty array.
+     * @return array<string, mixed> The API response as an associative array.
      *
-     * @throws RuntimeException If the API request fails or returns an error.
+     * @throws \RuntimeException If the API request fails or returns an error.
      */
     protected function sendRequest(string $method, string $endpoint, array $payload = [], array $files = []): array
     {
@@ -91,7 +106,15 @@ abstract class TelegramClientBase
             if (! empty($files)) {
                 $response = $this->httpClient->asMultipart();
                 foreach ($payload as $key => $value) {
-                    $response = $response->attach($key, $value);
+                    if (is_array($value)) {
+                        $contents = json_encode($value);
+                        if ($contents === false) {
+                            throw new InvalidArgumentException("Failed to JSON-encode payload value for key '{$key}'.");
+                        }
+                    } else {
+                        $contents = (string) $value;
+                    }
+                    $response = $response->attach($key, $contents);
                 }
                 foreach ($files as $key => $file) {
                     $response = $response->attach($key, $file->getContent(), $file->getClientOriginalName());
@@ -105,19 +128,24 @@ abstract class TelegramClientBase
         $data = $this->parseResponse($response);
 
         if (! $data['ok']) {
-            throw new RuntimeException("Telegram API error: {$data['description']} (Code: {$data['error_code']})");
+            $description = isset($data['description']) && is_string($data['description']) ? $data['description'] : 'Unknown error';
+            $errorCode = isset($data['error_code']) && is_int($data['error_code']) ? $data['error_code'] : 0;
+            throw new RuntimeException("Telegram API error: {$description} (Code: {$errorCode})");
         }
 
         return $data;
     }
 
     /**
-     * Parse the HTTP response and handle errors.
+     * Parses the HTTP response and handles errors.
+     *
+     * Extracts the JSON response from the HTTP response and validates its structure.
+     * Throws an exception if the response is invalid or indicates a failure.
      *
      * @param  Response  $response  The HTTP response from the Telegram API.
-     * @return array The parsed JSON response.
+     * @return array<string, mixed> The parsed JSON response as an associative array.
      *
-     * @throws RuntimeException If the response is invalid or cannot be parsed.
+     * @throws \RuntimeException If the response is invalid or cannot be parsed.
      */
     protected function parseResponse(Response $response): array
     {
@@ -131,13 +159,19 @@ abstract class TelegramClientBase
             throw new RuntimeException('Invalid Telegram API response.');
         }
 
+        // Ensure description and error_code are properly typed for error responses
+        if (! $data['ok']) {
+            $data['description'] = isset($data['description']) && is_string($data['description']) ? $data['description'] : 'Unknown error';
+            $data['error_code'] = isset($data['error_code']) && is_int($data['error_code']) ? $data['error_code'] : 0;
+        }
+
         return $data;
     }
 
     /**
-     * Get the bot token.
+     * Gets the Telegram Bot API token.
      *
-     * @return string The Telegram bot token.
+     * @return string The bot token.
      */
     public function getBotToken(): string
     {
@@ -145,9 +179,9 @@ abstract class TelegramClientBase
     }
 
     /**
-     * Get the API base URL.
+     * Gets the base URL for the Telegram API.
      *
-     * @return string The Telegram API base URL.
+     * @return string The API base URL.
      */
     public function getApiBaseUrl(): string
     {

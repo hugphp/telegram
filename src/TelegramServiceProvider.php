@@ -7,7 +7,7 @@ use InvalidArgumentException;
 
 class TelegramServiceProvider extends ServiceProvider
 {
-    public function boot()
+    public function boot(): void
     {
         // Publish configuration file (optional)
         $this->publishes([
@@ -15,7 +15,7 @@ class TelegramServiceProvider extends ServiceProvider
         ], 'config');
     }
 
-    public function register()
+    public function register(): void
     {
         $this->mergeConfigFrom(__DIR__.'/../config/telegram.php', 'telegram');
 

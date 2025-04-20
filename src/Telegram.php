@@ -24,8 +24,8 @@ class Telegram extends TelegramClientBase implements TelegramClientInterface
      *
      * @param  string  $chatId  The unique identifier for the target chat or username of the target channel (e.g., '@channelusername').
      * @param  string  $message  The message text to send.
-     * @param  array  $options  Additional options (e.g., parse_mode, reply_to_message_id, reply_markup).
-     * @return array The API response as an associative array.
+     * @param  array<string, mixed>  $options  Additional options (e.g., parse_mode, reply_to_message_id, reply_markup).
+     * @return array<string, mixed> The API response as an associative array.
      *
      * @throws \RuntimeException If the API request fails or returns an error.
      *
@@ -36,7 +36,7 @@ class Telegram extends TelegramClientBase implements TelegramClientInterface
         $payload = array_merge([
             'chat_id' => $chatId,
             'text' => $message,
-        ], $options);
+        ], $this->normalizePayload($options));
 
         return $this->sendRequest('post', 'sendMessage', $payload);
     }
@@ -46,8 +46,8 @@ class Telegram extends TelegramClientBase implements TelegramClientInterface
      *
      * @param  string  $chatId  The unique identifier for the target chat or username of the target channel.
      * @param  string|UploadedFile  $photo  The URL of the photo or an UploadedFile instance for local files.
-     * @param  array  $options  Additional options (e.g., caption, parse_mode, reply_markup).
-     * @return array The API response as an associative array.
+     * @param  array<string, mixed>  $options  Additional options (e.g., caption, parse_mode, reply_markup).
+     * @return array<string, mixed> The API response as an associative array.
      *
      * @throws \RuntimeException If the API request fails or returns an error.
      *
@@ -57,7 +57,7 @@ class Telegram extends TelegramClientBase implements TelegramClientInterface
     {
         $payload = array_merge([
             'chat_id' => $chatId,
-        ], $options);
+        ], $this->normalizePayload($options));
 
         if ($photo instanceof UploadedFile) {
             return $this->sendRequest('post', 'sendPhoto', $payload, ['photo' => $photo]);
@@ -73,8 +73,8 @@ class Telegram extends TelegramClientBase implements TelegramClientInterface
      *
      * @param  string  $chatId  The unique identifier for the target chat or username of the target channel.
      * @param  string|UploadedFile  $video  The URL of the video or an UploadedFile instance for local files.
-     * @param  array  $options  Additional options (e.g., caption, parse_mode, reply_markup).
-     * @return array The API response as an associative array.
+     * @param  array<string, mixed>  $options  Additional options (e.g., caption, parse_mode, reply_markup).
+     * @return array<string, mixed> The API response as an associative array.
      *
      * @throws \RuntimeException If the API request fails or returns an error.
      *
@@ -84,7 +84,7 @@ class Telegram extends TelegramClientBase implements TelegramClientInterface
     {
         $payload = array_merge([
             'chat_id' => $chatId,
-        ], $options);
+        ], $this->normalizePayload($options));
 
         if ($video instanceof UploadedFile) {
             return $this->sendRequest('post', 'sendVideo', $payload, ['video' => $video]);
@@ -100,8 +100,8 @@ class Telegram extends TelegramClientBase implements TelegramClientInterface
      *
      * @param  string  $chatId  The unique identifier for the target chat or username of the target channel.
      * @param  string|UploadedFile  $document  The URL of the document or an UploadedFile instance for local files.
-     * @param  array  $options  Additional options (e.g., caption, parse_mode, reply_markup).
-     * @return array The API response as an associative array.
+     * @param  array<string, mixed>  $options  Additional options (e.g., caption, parse_mode, reply_markup).
+     * @return array<string, mixed> The API response as an associative array.
      *
      * @throws \RuntimeException If the API request fails or returns an error.
      *
@@ -111,7 +111,7 @@ class Telegram extends TelegramClientBase implements TelegramClientInterface
     {
         $payload = array_merge([
             'chat_id' => $chatId,
-        ], $options);
+        ], $this->normalizePayload($options));
 
         if ($document instanceof UploadedFile) {
             return $this->sendRequest('post', 'sendDocument', $payload, ['document' => $document]);
@@ -128,8 +128,8 @@ class Telegram extends TelegramClientBase implements TelegramClientInterface
      * @param  string  $chatId  The unique identifier for the target chat or username of the target channel.
      * @param  float  $latitude  The latitude of the location.
      * @param  float  $longitude  The longitude of the location.
-     * @param  array  $options  Additional options (e.g., live_period, reply_markup).
-     * @return array The API response as an associative array.
+     * @param  array<string, mixed>  $options  Additional options (e.g., live_period, reply_markup).
+     * @return array<string, mixed> The API response as an associative array.
      *
      * @throws \RuntimeException If the API request fails or returns an error.
      *
@@ -139,9 +139,9 @@ class Telegram extends TelegramClientBase implements TelegramClientInterface
     {
         $payload = array_merge([
             'chat_id' => $chatId,
-            'latitude' => $latitude,
-            'longitude' => $longitude,
-        ], $options);
+            'latitude' => (string) $latitude,
+            'longitude' => (string) $longitude,
+        ], $this->normalizePayload($options));
 
         return $this->sendRequest('post', 'sendLocation', $payload);
     }
@@ -152,8 +152,8 @@ class Telegram extends TelegramClientBase implements TelegramClientInterface
      * @param  string  $chatId  The unique identifier for the target chat or username of the target channel.
      * @param  string  $phoneNumber  The contact's phone number.
      * @param  string  $firstName  The contact's first name.
-     * @param  array  $options  Additional options (e.g., last_name, vcard, reply_markup).
-     * @return array The API response as an associative array.
+     * @param  array<string, mixed>  $options  Additional options (e.g., last_name, vcard, reply_markup).
+     * @return array<string, mixed> The API response as an associative array.
      *
      * @throws \RuntimeException If the API request fails or returns an error.
      *
@@ -165,7 +165,7 @@ class Telegram extends TelegramClientBase implements TelegramClientInterface
             'chat_id' => $chatId,
             'phone_number' => $phoneNumber,
             'first_name' => $firstName,
-        ], $options);
+        ], $this->normalizePayload($options));
 
         return $this->sendRequest('post', 'sendContact', $payload);
     }
@@ -174,8 +174,8 @@ class Telegram extends TelegramClientBase implements TelegramClientInterface
      * Set a webhook for receiving Telegram updates.
      *
      * @param  string  $url  The URL to receive webhook updates.
-     * @param  array  $options  Additional options (e.g., allowed_updates, max_connections).
-     * @return array The API response as an associative array.
+     * @param  array<string, mixed>  $options  Additional options (e.g., allowed_updates, max_connections).
+     * @return array<string, mixed> The API response as an associative array.
      *
      * @throws \RuntimeException If the API request fails or returns an error.
      *
@@ -185,7 +185,7 @@ class Telegram extends TelegramClientBase implements TelegramClientInterface
     {
         $payload = array_merge([
             'url' => $url,
-        ], $options);
+        ], $this->normalizePayload($options));
 
         return $this->sendRequest('post', 'setWebhook', $payload);
     }
@@ -193,7 +193,7 @@ class Telegram extends TelegramClientBase implements TelegramClientInterface
     /**
      * Get information about the current webhook.
      *
-     * @return array The API response as an associative array.
+     * @return array<string, mixed> The API response as an associative array.
      *
      * @throws \RuntimeException If the API request fails or returns an error.
      *
@@ -207,8 +207,8 @@ class Telegram extends TelegramClientBase implements TelegramClientInterface
     /**
      * Delete the current webhook.
      *
-     * @param  array  $options  Additional options (e.g., drop_pending_updates).
-     * @return array The API response as an associative array.
+     * @param  array<string, mixed>  $options  Additional options (e.g., drop_pending_updates).
+     * @return array<string, mixed> The API response as an associative array.
      *
      * @throws \RuntimeException If the API request fails or returns an error.
      *
@@ -216,14 +216,14 @@ class Telegram extends TelegramClientBase implements TelegramClientInterface
      */
     public function deleteWebhook(array $options = []): array
     {
-        return $this->sendRequest('post', 'deleteWebhook', $options);
+        return $this->sendRequest('post', 'deleteWebhook', $this->normalizePayload($options));
     }
 
     /**
      * Retrieve updates for the bot.
      *
-     * @param  array  $options  Optional parameters (e.g., offset, limit, timeout).
-     * @return array The API response as an associative array.
+     * @param  array<string, mixed>  $options  Optional parameters (e.g., offset, limit, timeout).
+     * @return array<string, mixed> The API response as an associative array.
      *
      * @throws \RuntimeException If the API request fails or returns an error.
      *
@@ -231,6 +231,31 @@ class Telegram extends TelegramClientBase implements TelegramClientInterface
      */
     public function getUpdates(array $options = []): array
     {
-        return $this->sendRequest('get', 'getUpdates', $options);
+        return $this->sendRequest('get', 'getUpdates', $this->normalizePayload($options));
+    }
+
+    /**
+     * Normalizes payload options to ensure type safety for sendRequest.
+     *
+     * Converts non-string, non-array values to strings to ensure the payload conforms to
+     * array<string, string|array<string, mixed>>.
+     *
+     * @param  array<string, mixed>  $options  The input options to normalize.
+     * @return array<string, string|array<string, mixed>> The normalized payload.
+     */
+    private function normalizePayload(array $options): array
+    {
+        $normalized = [];
+        foreach ($options as $key => $value) {
+            if (is_array($value)) {
+                $normalized[$key] = $value; // Arrays are preserved as-is
+            } elseif (is_scalar($value) || is_null($value)) {
+                $normalized[$key] = (string) $value; // Cast scalars and null to strings
+            } else {
+                throw new \InvalidArgumentException("Invalid payload value for key '{$key}': Only scalars, null, or arrays are allowed.");
+            }
+        }
+
+        return $normalized;
     }
 }
